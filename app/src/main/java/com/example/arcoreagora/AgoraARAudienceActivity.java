@@ -38,7 +38,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
     private FrameLayout mLocalContainer;
     private SurfaceView mLocalView;
     private ImageView mMuteBtn;
-    private float mScaleFactor = 0.1f;
+    private float mScaleFactor = 0.05f;
 
     private String channelName = "";
     private boolean isCalling = true;
@@ -240,7 +240,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
         incrementObjectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mScaleFactor += 0.1;
+                mScaleFactor += 0.01;
             }
         });
     }

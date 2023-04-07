@@ -32,6 +32,7 @@ import com.example.arcoreagora.rendering.ObjectRenderer;
 import com.example.arcoreagora.rendering.PeerRenderer;
 import com.example.arcoreagora.rendering.PlaneRenderer;
 import com.example.arcoreagora.rendering.PointCloudRenderer;
+import com.example.arcoreagora.rendering.ShapeRenderer;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.Anchor;
@@ -83,8 +84,6 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
     private AgoraVideoRender mRender;
     private Handler mSenderHandler;
     private Session mSession;
-    private final ObjectRenderer mVirtualObject = new ObjectRenderer();
-    private final ObjectRenderer mVirtualObjectShadow = new ObjectRenderer();
     private final PlaneRenderer mPlaneRenderer = new PlaneRenderer();
     private final PointCloudRenderer mPointCloud = new PointCloudRenderer();
     private final BackgroundRenderer mBackgroundRenderer = new BackgroundRenderer();
@@ -92,10 +91,13 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
     private DisplayRotationHelper mDisplayRotationHelper;
     private Instrumentation instrumentation = new Instrumentation();
 
+    private ObjectRenderer placeholderObjectRenderer = new ObjectRenderer();
+    private ObjectRenderer circleObjectRenderer = new ObjectRenderer();
+    private ObjectRenderer arrowObjectRenderer = new ObjectRenderer();
+
     private final ArrayBlockingQueue<MotionEvent> queuedSingleTaps = new ArrayBlockingQueue<>(16);
     private final ArrayList<VirtualObject> virtualObjects = new ArrayList<>();
-    private final float[] mAnchorMatrix = new float[16];
-    private float mScaleFactor = 0.1f;
+    private float mScaleFactor = 0.05f;
     private String channelName = "";
     private boolean installRequested;
     private boolean mHidePoint;
@@ -416,7 +418,31 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
         incrementObjectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mScaleFactor += 0.1;
+                mScaleFactor = Math.min(mScaleFactor+0.01f, 0.2f);
+            }
+        });
+
+        Button decrementObjectButton = findViewById(R.id.decrement_size);
+        decrementObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mScaleFactor = Math.max(mScaleFactor-0.01f, 0.01f);
+            }
+        });
+
+        Button circleObjectButton = findViewById(R.id.circle);
+        circleObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                placeholderObjectRenderer = circleObjectRenderer;
+            }
+        });
+
+        Button arrowObjectButton = findViewById(R.id.arrow);
+        arrowObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                placeholderObjectRenderer = arrowObjectRenderer;
             }
         });
 
@@ -493,17 +519,11 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
         }
 
         // Prepare the other rendering objects.
-        try {
-            mVirtualObject.createOnGlThread(/*context=*/this, "torus.obj", "green.png");
-            mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
+        circleObjectRenderer = ShapeRenderer.circle(this);
+        arrowObjectRenderer = ShapeRenderer.arrow(this);
 
-            mVirtualObjectShadow.createOnGlThread(/*context=*/this,
-                    "andy_shadow.obj", "andy_shadow.png");
-            mVirtualObjectShadow.setBlendMode(ObjectRenderer.BlendMode.Shadow);
-            mVirtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to read obj file");
-        }
+        placeholderObjectRenderer = circleObjectRenderer;
+
         try {
             mPlaneRenderer.createOnGlThread(/*context=*/this, "trigrid.png");
         } catch (IOException e) {
@@ -564,7 +584,7 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
                         // Adding an Anchor tells ARCore that it should track this position in
                         // space. This anchor is created on the Plane to place the 3D model
                         // in the correct position relative both to the world and to the plane.
-                        virtualObjects.add(new VirtualObject(hit.createAnchor(), mScaleFactor, 1));
+                        virtualObjects.add(new VirtualObject(placeholderObjectRenderer, hit.createAnchor(), mScaleFactor, 1));
                         break;
                     }
                 }
@@ -618,22 +638,14 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
             }
 
             // Visualize anchors created by touch.
-            float scaleFactor = 1.0f;
 
             for (VirtualObject virtualObject : virtualObjects) {
                 if (virtualObject.getAnchor().getTrackingState() != TrackingState.TRACKING) {
                     continue;
                 }
-                // Get the current pose of an Anchor in world space. The Anchor pose is updated
-                // during calls to session.update() as ARCore refines its estimate of the world.
-                virtualObject.getAnchor().getPose().toMatrix(mAnchorMatrix, 0);
-
 
                 // Update and draw the model and its shadow.
-                mVirtualObject.updateModelMatrix(mAnchorMatrix, virtualObject.getScale());
-                //mVirtualObjectShadow.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-                //mVirtualObjectShadow.draw(viewmtx, projmtx, lightIntensity);
+                virtualObject.render(viewmtx, projmtx, lightIntensity);
             }
 
             sendARViewMessage();
