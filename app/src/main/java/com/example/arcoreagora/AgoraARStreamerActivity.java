@@ -93,7 +93,7 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
     private Instrumentation instrumentation = new Instrumentation();
 
     private final ArrayBlockingQueue<MotionEvent> queuedSingleTaps = new ArrayBlockingQueue<>(16);
-    private final ArrayList<Anchor> anchors = new ArrayList<>();
+    private final ArrayList<VirtualObject> virtualObjects = new ArrayList<>();
     private final float[] mAnchorMatrix = new float[16];
     private float mScaleFactor = 0.1f;
     private String channelName = "";
@@ -145,19 +145,23 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
         public void onStreamMessage(int uid, int streamId, byte[] data) {
             //when received the remote user's stream message data
             super.onStreamMessage(uid, streamId, data);
-            int touchCount = data.length / 8;       //number of touch points from data array
+            int touchCount = data.length / 12;       //number of touch points from data array
             for (int k = 0; k < touchCount; k++) {
                 //get the touch point's x,y position related to the center of the screen and calculated the raw position
                 byte[] xByte = new byte[4];
                 byte[] yByte = new byte[4];
+                byte[] scaleFactorByte = new byte[4];
                 for (int i = 0; i < 4; i++) {
-                    xByte[i] = data[i + 8 * k];
-                    yByte[i] = data[i + 8 * k + 4];
+                    xByte[i] = data[i + 12 * k];
+                    yByte[i] = data[i + 12 * k + 4];
+                    scaleFactorByte[i] = data[i + 12 * k + 8];
                 }
                 float convertedX = ByteBuffer.wrap(xByte).getFloat();
                 float convertedY = ByteBuffer.wrap(yByte).getFloat();
+                float convertedScaleFactor = ByteBuffer.wrap(scaleFactorByte).getFloat();
                 float center_X = convertedX + ((float) mWidth / 2);
                 float center_Y = convertedY + ((float) mHeight / 2);
+                mScaleFactor = convertedScaleFactor;
 
                 //simulate the clicks based on the touch position got from the data array
                 instrumentation.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, center_X, center_Y, 0));
@@ -408,6 +412,14 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
             }
         });
 
+        Button incrementObjectButton = findViewById(R.id.increment_size);
+        incrementObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mScaleFactor += 0.1;
+            }
+        });
+
         try {
 
             mRtcEngine = RtcEngine.create(this, getString(R.string.private_broadcasting_app_id), mRtcEventHandler);
@@ -482,7 +494,7 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
 
         // Prepare the other rendering objects.
         try {
-            mVirtualObject.createOnGlThread(/*context=*/this, "andy.obj", "andy.png");
+            mVirtualObject.createOnGlThread(/*context=*/this, "torus.obj", "green.png");
             mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
 
             mVirtualObjectShadow.createOnGlThread(/*context=*/this,
@@ -545,14 +557,14 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
                         // Hits are sorted by depth. Consider only closest hit on a plane or oriented point.
                         // Cap the number of objects created. This avoids overloading both the
                         // rendering system and ARCore.
-                        if (anchors.size() >= 250) {
-                            anchors.get(0).detach();
-                            anchors.remove(0);
+                        if (virtualObjects.size() >= 250) {
+                            virtualObjects.get(0).getAnchor().detach();
+                            virtualObjects.remove(0);
                         }
                         // Adding an Anchor tells ARCore that it should track this position in
                         // space. This anchor is created on the Plane to place the 3D model
                         // in the correct position relative both to the world and to the plane.
-                        anchors.add(hit.createAnchor());
+                        virtualObjects.add(new VirtualObject(hit.createAnchor(), mScaleFactor, 1));
                         break;
                     }
                 }
@@ -608,20 +620,20 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
             // Visualize anchors created by touch.
             float scaleFactor = 1.0f;
 
-            for (Anchor anchor : anchors) {
-                if (anchor.getTrackingState() != TrackingState.TRACKING) {
+            for (VirtualObject virtualObject : virtualObjects) {
+                if (virtualObject.getAnchor().getTrackingState() != TrackingState.TRACKING) {
                     continue;
                 }
                 // Get the current pose of an Anchor in world space. The Anchor pose is updated
                 // during calls to session.update() as ARCore refines its estimate of the world.
-                anchor.getPose().toMatrix(mAnchorMatrix, 0);
+                virtualObject.getAnchor().getPose().toMatrix(mAnchorMatrix, 0);
 
 
                 // Update and draw the model and its shadow.
-                mVirtualObject.updateModelMatrix(mAnchorMatrix, mScaleFactor);
-                mVirtualObjectShadow.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                mVirtualObject.updateModelMatrix(mAnchorMatrix, virtualObject.getScale());
+                //mVirtualObjectShadow.updateModelMatrix(mAnchorMatrix, scaleFactor);
                 mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-                mVirtualObjectShadow.draw(viewmtx, projmtx, lightIntensity);
+                //mVirtualObjectShadow.draw(viewmtx, projmtx, lightIntensity);
             }
 
             sendARViewMessage();

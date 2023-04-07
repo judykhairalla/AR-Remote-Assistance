@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -37,6 +38,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
     private FrameLayout mLocalContainer;
     private SurfaceView mLocalView;
     private ImageView mMuteBtn;
+    private float mScaleFactor = 0.1f;
 
     private String channelName = "";
     private boolean isCalling = true;
@@ -127,6 +129,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
                         float y = event.getRawY() - ((float)mHeight / 2);
                         floatList.add(x);
                         floatList.add(y);
+                        floatList.add(mScaleFactor);
                         if (touchCount == 10) {
                             //send the touch positions when collected 10 touch points
                             sendMessage(touchCount, floatList);
@@ -152,7 +155,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
      * @param floatList
      */
     private void sendMessage(int touchCount, List<Float> floatList) {
-        byte[] motionByteArray = new byte[touchCount * 4 * 2];
+        byte[] motionByteArray = new byte[floatList.size() * 4 ];
         for (int i = 0; i < floatList.size(); i++) {
             byte[] curr = ByteBuffer.allocate(4).putFloat(floatList.get(i)).array();
             for (int j = 0; j < 4; j++) {
@@ -232,6 +235,14 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        Button incrementObjectButton = findViewById(R.id.increment_size);
+        incrementObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mScaleFactor += 0.1;
+            }
+        });
     }
 
     private void setUpLocalView() {
