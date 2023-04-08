@@ -39,6 +39,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
     private SurfaceView mLocalView;
     private ImageView mMuteBtn;
     private float mScaleFactor = 0.05f;
+    private int mObjectChoice = 0;
 
     private String channelName = "";
     private boolean isCalling = true;
@@ -129,13 +130,13 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
                         float y = event.getRawY() - ((float)mHeight / 2);
                         floatList.add(x);
                         floatList.add(y);
-                        floatList.add(mScaleFactor);
-                        if (touchCount == 10) {
+                        floatList.add(mObjectChoice + mScaleFactor);
+//                        if (touchCount == 10) {
                             //send the touch positions when collected 10 touch points
                             sendMessage(touchCount, floatList);
                             touchCount = 0;
                             floatList.clear();
-                        }
+//                        }
                         break;
                     case MotionEvent.ACTION_UP:
                         //send touch positions after the touch motion
@@ -240,7 +241,31 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
         incrementObjectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mScaleFactor += 0.01;
+                mScaleFactor = Math.min(mScaleFactor+0.01f, 0.2f);
+            }
+        });
+
+        Button decrementObjectButton = findViewById(R.id.decrement_size);
+        decrementObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mScaleFactor = Math.max(mScaleFactor-0.01f, 0.01f);
+            }
+        });
+
+        Button circleObjectButton = findViewById(R.id.circle);
+        circleObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mObjectChoice = 0;
+            }
+        });
+
+        Button arrowObjectButton = findViewById(R.id.arrow);
+        arrowObjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mObjectChoice = 1;
             }
         });
     }

@@ -46,6 +46,36 @@
             android:layout_gravity="left"
             android:text="+"
             android:textSize="16sp"/>
+
+        <Button
+            android:id="@+id/decrement_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/button_background"
+            android:layout_marginTop="3dp"
+            android:layout_gravity="left"
+            android:text="-"
+            android:textSize="16sp"/>
+
+        <Button
+            android:id="@+id/circle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/button_background"
+            android:layout_marginTop="3dp"
+            android:layout_gravity="left"
+            android:text="Circle"
+            android:textSize="16sp"/>
+
+        <Button
+            android:id="@+id/arrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/button_background"
+            android:layout_marginTop="3dp"
+            android:layout_gravity="left"
+            android:text="Arrow"
+            android:textSize="16sp"/>
     </LinearLayout>
 
     <FrameLayout

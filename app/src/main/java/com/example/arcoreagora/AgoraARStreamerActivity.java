@@ -152,18 +152,22 @@ public class AgoraARStreamerActivity extends AppCompatActivity implements GLSurf
                 //get the touch point's x,y position related to the center of the screen and calculated the raw position
                 byte[] xByte = new byte[4];
                 byte[] yByte = new byte[4];
-                byte[] scaleFactorByte = new byte[4];
+                byte[] optionsByte = new byte[4];
                 for (int i = 0; i < 4; i++) {
                     xByte[i] = data[i + 12 * k];
                     yByte[i] = data[i + 12 * k + 4];
-                    scaleFactorByte[i] = data[i + 12 * k + 8];
+                    optionsByte[i] = data[i + 12 * k + 8];
                 }
                 float convertedX = ByteBuffer.wrap(xByte).getFloat();
                 float convertedY = ByteBuffer.wrap(yByte).getFloat();
-                float convertedScaleFactor = ByteBuffer.wrap(scaleFactorByte).getFloat();
+                float options = ByteBuffer.wrap(optionsByte).getFloat();
                 float center_X = convertedX + ((float) mWidth / 2);
                 float center_Y = convertedY + ((float) mHeight / 2);
-                mScaleFactor = convertedScaleFactor;
+
+                int objectChoice = (int) options;
+                placeholderObjectRenderer = objectChoice == 0? circleObjectRenderer : arrowObjectRenderer;
+
+                mScaleFactor = options - objectChoice;
 
                 //simulate the clicks based on the touch position got from the data array
                 instrumentation.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, center_X, center_Y, 0));
