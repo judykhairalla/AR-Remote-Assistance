@@ -3,6 +3,7 @@ package com.example.arcoreagora;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -18,6 +20,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -100,6 +105,7 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
@@ -179,6 +185,23 @@ public class AgoraARAudienceActivity extends AppCompatActivity {
         mLocalContainer = findViewById(R.id.local_video_view_container);
         mRemoteContainer = findViewById(R.id.remote_video_view_container);
         mMuteBtn = findViewById(R.id.btn_mute);
+
+        // Bottom sheet
+        FloatingActionButton openBottomSheet = findViewById(R.id.open_modal_bottom_sheet);
+        openBottomSheet.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        final BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(
+                                AgoraARAudienceActivity.this, R.style.Theme_Design_BottomSheetDialog);
+                        View bottomSheetView = LayoutInflater.from(getApplicationContext())
+                                .inflate(R.layout.bottom_sheet_dialogue,
+                                        (LinearLayout) findViewById(R.id.bottom_sheet_dialogue));
+                        bottomSheetDialog.setContentView(bottomSheetView);
+                        bottomSheetDialog.show();
+                    }
+                }
+        );
     }
 
     private boolean checkSelfPermission(String permission, int requestCode) {
